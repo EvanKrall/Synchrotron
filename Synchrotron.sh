@@ -31,23 +31,42 @@ function stop() {
 	fi
 }
 
-function start() {
-	blueecho "Starting Synchrotron..."
+function checkrunning() {
 	if [[ -e server.pid ]]
-		then
+	then
 		redecho "Error: Synchrotron is already running."
 		exit 1
 	fi
-	node server.js &
-	sleep 3
-	jobs -p %% > server.pid
-	disown %%
+}
+
+
+function runserver() (
+	checkrunning
+	bash <<-END
+		echo "\$\$" > server.pid
+		node server.js
+		rm server.pid
+	END
+)
+
+function start() {
+	checkrunning
+	blueecho "Starting Synchrotron..."
+	runserver &
+	sleep 1
+	jobs %% >/dev/null # Check that our background job is still running.
+}
+
+function debug() {
+	runserver
 }
 
 case "$1" in
-	"start") updategit; start;;
+	"start") checkrunning; updategit; start;;
 	"stop") stop;;
 	"restart") updategit; stop; start;;
+	"debug") checkrunning; updategit; debug;;
+	*) redecho "Invalid command $1"; exit 1;;
 esac
 
 trap "" EXIT
