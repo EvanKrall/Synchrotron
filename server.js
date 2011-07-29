@@ -35,6 +35,12 @@ function Video() {
 		myClients.push(client);
 	};
 
+	this.dropClient = function(client_id) {
+		myClients = myClients.filter(function(client) {
+			return client.id !== client_id;
+		});
+	};
+
 	this.setPlan = function(_plan) {
 		plan = _plan;
 		if (plan.length > 0) {
@@ -63,7 +69,7 @@ function Video() {
 	}
 }
 
-var server = dnode(function(connection) {
+var server = dnode(function(remote, connection) {
 	return {
 		register : function(video_id, client, callback) {
 			id = makeId();
@@ -78,6 +84,11 @@ var server = dnode(function(connection) {
 			videos[video_id].addClient(client);
 			video_by_client_id[id] = videos[video_id];
 			callback(id, video_id);
+
+			connection.addListener('end', function() {
+				console.log("Dropping client " +client.id);
+				videos[video_id].dropClient(client.id);
+			})
 		},
 		stateChange : function(id, state) {
 			console.log("stateChange", id, state);
