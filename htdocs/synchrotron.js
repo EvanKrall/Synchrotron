@@ -17,13 +17,19 @@ $(document).ready(function() {
 		showStatus("Connecting to Synchrotron");
 		DNode.connect(function (server) {
 			showStatus("Connected. Registering with Synchrotron");
-			server.register(window.location.hash, new Client(), function(id) {
+			server.register(window.location.hash, new Client(), function(id, video_id) {
+				window.location.hash = '#'+video_id;
 				showStatus("Registered with id " + id);
 				client_id = id;
-				// $('#video').bind('playing pause	stalled canplaythrough seeking seeked', function(event) {
-				// 	 server.reportEvent(id, event.type, getStatus());
-				// });
 			})
+
+			// REMOVEME
+			$('#pause').click(function() {
+				server.pause(client_id, $('#goal_time').val());
+			});
+			$('#play').click(function() {
+				server.play(client_id, $('#goal_time').val());
+			});
 		});
 	})
 
