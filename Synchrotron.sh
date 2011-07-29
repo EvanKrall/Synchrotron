@@ -15,11 +15,6 @@ function blueecho() {
 
 trap "redecho Failure" EXIT
 
-function updategit() {
-	blueecho "Updating to the latest version of Synchrotron"
-	git pull --ff-only
-}
-
 function stop() {
 	blueecho "Stopping Synchrotron..."
 	if [[ -e server.pid ]]
@@ -62,10 +57,10 @@ function debug() {
 }
 
 case "$1" in
-	"start") checkrunning; updategit; start;;
+	"start") checkrunning; start;;
 	"stop") stop;;
-	"restart") updategit; stop; start;;
-	"debug") checkrunning; updategit; debug;;
+	"restart") stop; start;;
+	"debug") checkrunning; debug;;
 	*) redecho "Invalid command $1"; exit 1;;
 esac
 
