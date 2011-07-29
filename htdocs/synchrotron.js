@@ -7,6 +7,7 @@ $(document).ready(function() {
 	var STATE_SEEKING = 'seeking';
 
 	var client_id;
+	var server;
 
 	showStatus("Loading video metadata.");
 
@@ -15,7 +16,8 @@ $(document).ready(function() {
 	video.load(); video.play(); video.pause();
 	$('#video').one('loadedmetadata', function() {
 		showStatus("Connecting to Synchrotron");
-		DNode.connect(function (server) {
+		DNode.connect(function (_server) {
+			server = _server;
 			showStatus("Connected. Registering with Synchrotron");
 			server.register(window.location.hash, new Client(), function(id, video_id) {
 				window.location.hash = '#'+video_id;
@@ -131,7 +133,8 @@ $(document).ready(function() {
 	}
 
 	function reportState() {
-
+		state = calculateState();
+		server.stateChange(client_id, state);
 	}
 
 	function calculateState() {

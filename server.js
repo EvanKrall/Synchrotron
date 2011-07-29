@@ -27,25 +27,39 @@ var STATE_PLAYING = 'playing';
 var THRESHOLD = 5; // The maximum timedelta in seconds that we can tolerate between where we are and where the server is.
 
 function Video() {
-	var clients = [];
+	var myClients = [];
 	// List of 2-tuples containing the state and the goal time.
 	var plan = [[STATE_PLAYING, 0]];
 
 	this.addClient = function(client) {
-		clients.push(client);
+		myClients.push(client);
 	};
 
 	this.setPlan = function(_plan) {
 		plan = _plan;
-		setGoal(plan[0].state, plan[0].time);
+		if (plan.length > 0) {
+			setGoal(plan[0].state, plan[0].time);
+		}
 	};
 
 	function setGoal(goal, time) {
 		console.log('setGoal', goal, time);
-		for (var i=0; i<clients.length; i++) {
-			console.log('Setting goal for client ' + clients[i].id);
-			clients[i].setGoal(goal, time);
+		for (var i=0; i<myClients.length; i++) {
+			console.log('Setting goal for client ' + myClients[i].id + ' ' + goal + ' ' + time);
+			myClients[i].setGoal(goal, time);
 		}
+	}
+
+	this.clientStateChanged = function(client_id, state) {
+		clients[client_id].currentState = state;
+		for (var i=0; i<myClients.length; i++) {
+			if (myClients[i].currentState !== state) {
+				return;
+			}
+		}
+		// All of the clients are in the same state.
+		console.log("All clients are in state "+ state);
+		this.setPlan(plan.slice(1));
 	}
 }
 
@@ -66,7 +80,8 @@ var server = dnode(function(connection) {
 			callback(id, video_id);
 		},
 		stateChange : function(id, state) {
-			console.log("stateChange", name, state);
+			console.log("stateChange", id, state);
+			video_by_client_id[id].clientStateChanged(id, state);
 		},
 		// reportEvent : function(id, event_type, status) {
 		// 	console.log("reportEvent", id, event_type, status);
@@ -80,7 +95,10 @@ var server = dnode(function(connection) {
 		},
 		play : function(client_id, time) {
 			console.log('play', client_id, time);
-			video_by_client_id[client_id].setPlan([{state: STATE_PLAYING, time: time}]);
+			video_by_client_id[client_id].setPlan([
+				{state: STATE_PAUSED, time: time},
+				{state: STATE_PLAYING, time: time}
+			]);
 		}
 	};
 });
