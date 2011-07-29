@@ -43,9 +43,8 @@ $(document).ready(function() {
 				}
 			});
 			$('#video').bind('pause', function() {
-				log("Got paused event");
-				if (goalState !== STATE_LOADED_AND_PAUSED || Math.abs(goalTime - video.currentTime) > CLOSE_ENOUGH_THRESHOLD) {
-					video = $('#video')[0];
+				video = $('#video')[0];
+				if (!video.seeking && (goalState !== STATE_LOADED_AND_PAUSED || Math.abs(goalTime - video.currentTime) > CLOSE_ENOUGH_THRESHOLD)) {
 					server.pause(client_id, video.currentTime);
 				}
 			});
