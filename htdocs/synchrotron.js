@@ -9,6 +9,10 @@ $(document).ready(function() {
 	var client_id;
 	var server;
 
+
+	var goalState = STATE_NOT_LOADING;
+	var goalTime = 0;
+
 	showStatus("Loading video metadata.");
 
 	// Start loading the video. Apparently .load() doesn't work.
@@ -19,10 +23,10 @@ $(document).ready(function() {
 		DNode.connect(function (_server) {
 			server = _server;
 			showStatus("Connected. Registering with Synchrotron");
-			server.register(window.location.hash, new Client(), function(id, video_id) {
+			server.register(window.location.hash, new Client(server), function(id, video_id) {
 				window.location.hash = '#'+video_id;
 				showStatus("Registered with id " + id);
-				client_id = id;
+				client_id = id
 			})
 
 			// REMOVEME
@@ -32,14 +36,27 @@ $(document).ready(function() {
 			$('#play').click(function() {
 				server.play(client_id, $('#goal_time').val());
 			});
+			$('#video').bind('playing', function() {
+				if (goalState !== STATE_PLAYING || Math.abs(goalTime - video.currentTime) > CLOSE_ENOUGH_THRESHOLD) {
+					video = $('#video')[0];
+					server.play(client_id, video.currentTime);
+				}
+			});
+			$('#video').bind('pause', function() {
+				log("Got paused event");
+				if (goalState !== STATE_LOADED_AND_PAUSED || Math.abs(goalTime - video.currentTime) > CLOSE_ENOUGH_THRESHOLD) {
+					video = $('#video')[0];
+					server.pause(client_id, video.currentTime);
+				}
+			});
+			$('#video').bind('seeked', function() {
+				video = $('#video')[0];
+				server.play(client_id, video.currentTime);
+			});
 		});
 	})
 
-	function Client() {
-		// TODO make these into getters that calculate this shit.
-		var goalState = STATE_NOT_LOADING;
-		var goalTime = 0;
-
+	function Client(server) {
 		this.setGoal = function(state, time) {
 			showStatus("Going for goal " + state + ", " + time);
 			goalState = state;
